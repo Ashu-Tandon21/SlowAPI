@@ -1,14 +1,18 @@
 from main import SlowAPI
 from response import Response
 
-slowapi = SlowAPI()
 
-@slowapi.get('/users')
-def get_users(req,res) :
+def global_middleware(request):
+    print("This was executed before anything(route) \n")
+
+slowapi = SlowAPI(middlewares=[global_middleware])
+
+@slowapi.get("/users/{id}")
+def get_users(req,res,id) :
     # res['status_code'] = '200 OK'
     # res['headers'] = []
     # res['text'] = "['Ashu','Ashutosh']"
-    res.send("['Ashu','Ashutosh']",'200')
+    res.send(id,200)
 
 
 @slowapi.post('/users')

@@ -1,5 +1,7 @@
 from typing import Any
+from parse import parse
 from response import Response
+import types
 # def app(environ,start_response):
 #     print(environ)
 #     start_response('200 OK',headers = [])
@@ -10,8 +12,9 @@ from response import Response
 
 class SlowAPI : 
     
-    def __init__(self) -> None : 
+    def __init__(self,middlewares = []) -> None : 
         self.routes = dict()
+        self.middlewares = middlewares
 
     def __call__(self,environ,start_response) -> Any :
         response = Response()
@@ -19,12 +22,25 @@ class SlowAPI :
         #dictionary is not suitable in this scinario as it does not maintain the order of insertion
         #plus we want to have multiple handlers for same path with different request methods
         # ****************
+        '''
+            checking if the middlewares are instance of function or not 
+            as we want are global middlewares to be of instance of function 
+        '''
+        for middleware in self.middlewares :
+            if isinstance(middleware,types.FunctionType):
+                middleware(environ)
+            else :
+                raise ValueError(" Middleware must be instance of function ")
+
         for path,handler_dict in self.routes.items() :
+            res = parse(path,environ['PATH_INFO'])
+            
             for request_method , handler in handler_dict.items() :
-                if path == environ['PATH_INFO'] and request_method == environ['REQUEST_METHOD']:
-                    handler(environ,response)
-                    response.as_wsgi(start_response)
-                    return [response.text.encode()]
+                if res and request_method == environ['REQUEST_METHOD']:
+                    handler(environ,response,**res.named)
+                    return response.as_wsgi(start_response)
+                    
+        return response.as_wsgi(start_response) 
 
 
     def common_route(self, path, handler, method_name):
