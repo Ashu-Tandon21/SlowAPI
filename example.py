@@ -5,9 +5,13 @@ from response import Response
 def global_middleware(request):
     print("This was executed before anything(route) \n")
 
+def local_middleware(request):
+    print("This was executed before the route handler \n")
+
 slowapi = SlowAPI(middlewares=[global_middleware])
 
-@slowapi.get("/users/{id}")
+
+@slowapi.get("/users/{id}",middlewares = [local_middleware])
 def get_users(req,res,id) :
     # res['status_code'] = '200 OK'
     # res['headers'] = []

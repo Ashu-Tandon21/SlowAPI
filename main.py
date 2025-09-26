@@ -15,6 +15,7 @@ class SlowAPI :
     def __init__(self,middlewares = []) -> None : 
         self.routes = dict()
         self.middlewares = middlewares
+        self.middleware_local = dict()
 
     def __call__(self,environ,start_response) -> Any :
         response = Response()
@@ -37,13 +38,20 @@ class SlowAPI :
             
             for request_method , handler in handler_dict.items() :
                 if res and request_method == environ['REQUEST_METHOD']:
+                    route_middlewares = self.middleware_local[path][request_method]
+                    for mw in route_middlewares :
+                        if isinstance(mw,types.FunctionType):
+                            mw(environ)
+                        else :
+                            raise ValueError(" Middleware must be instance of function ")
                     handler(environ,response,**res.named)
                     return response.as_wsgi(start_response)
+                
                     
         return response.as_wsgi(start_response) 
 
 
-    def common_route(self, path, handler, method_name):
+    def common_route(self, path, handler, method_name, middlewares = []) :
         # {
             #     '/users':{
             #         'GET' : handler
@@ -53,29 +61,44 @@ class SlowAPI :
             #         'PATCH' : handler5
             #     }
             # }
+
+           
+
             path_name = path or f"/{handler.__name__}"
 
             if path_name not in self.routes:
                 self.routes[path_name] = {}
             self.routes[path_name][method_name] = handler
+
+            # MIDDLEWARES
+            #{
+            #     '/users':{
+            #         'GET' : [mw1,mw2]
+            #         'POST' : [mw3,mw4]
+            #     }
+            # }
+            if path_name not in self.middleware_local:
+                self.middleware_local[path_name] = {}
+            self.middleware_local[path_name][method_name] = middlewares
+
             print(self.routes) 
 
 
-    def get(self,path=None):
+    def get(self,path=None,middlewares = []):
         def wrapper(handler):
-            return self.common_route(path,handler,'GET')   
+            return self.common_route(path,handler,'GET',middlewares)   
 
         return wrapper  
 
-    def post(self,path=None):
+    def post(self,path=None, middlewares = []):
         def wrapper(handler):
-            return self.common_route(path,handler,'POST')   
+            return self.common_route(path,handler,'POST',middlewares)   
 
         return wrapper  
 
-    def delete(self,path=None):
+    def delete(self,path=None, middlewares = []):
         def wrapper(handler):
-            return self.common_route(path,handler,'DELETE')   
+            return self.common_route(path,handler,'DELETE', middlewares)   
 
         return wrapper  
 
