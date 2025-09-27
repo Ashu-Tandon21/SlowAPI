@@ -34,7 +34,7 @@ class User :
             res.send("Get all users")
         
     def post(req,res):
-        res.send("Create a user",200)
+        res.render("eg",{'name': 'Ashu','msg':'How are you?'})
 
     def helper(req,res):
         pass

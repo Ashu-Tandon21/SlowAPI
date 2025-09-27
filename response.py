@@ -1,3 +1,6 @@
+import re
+
+
 class Response :
 
     def __init__(self,status_code = '404 not found',text = 'Route not found') -> None:
@@ -24,4 +27,16 @@ class Response :
             raise ValueError(" Status code must be either string or integer ")
 
         
-        
+    def render(self,template_name,context = {}):
+        # here we are going to render the html template with the context provided
+        path = f"{template_name}.html"
+
+        with open(path) as fp :
+            template = fp.read()
+            for key , value in context.items():
+                template = re.sub(r'{{\s*' + re.escape(key) + r'\s*}}',str(value),template)
+                # some  regex to replace {{ key }} with value in the template
+
+        self.headers.append(('Content-Type','text/html'))
+        self.text = template
+        self.status_code = '200 OK'
