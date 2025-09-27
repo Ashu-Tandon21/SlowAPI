@@ -19,6 +19,21 @@ def get_users(req,res,id) :
     res.send(id,200)
 
 
-@slowapi.post('/users')
-def create_user(req,res) :
-    res.send("User Created",'201 Created')
+# @slowapi.post('/users')
+# def create_user(req,res) :
+#     res.send("User Created",'201 Created')
+
+
+@slowapi.route()
+class User :
+    def __init__(self):
+        pass
+
+    def get(req,res):
+            res.send("Get all users")
+        
+    def post(req,res):
+        res.send("Create a user",200)
+
+    def helper(req,res):
+        pass

@@ -1,7 +1,11 @@
+import inspect
 from typing import Any
 from parse import parse
 from response import Response
 import types
+
+SUPPORTED_METHODS = {'GET','POST','DELETE','PUT','PATCH'}
+
 # def app(environ,start_response):
 #     print(environ)
 #     start_response('200 OK',headers = [])
@@ -101,6 +105,23 @@ class SlowAPI :
             return self.common_route(path,handler,'DELETE', middlewares)   
 
         return wrapper  
+    
+
+    def route(self,path = None , middlewares = []):
+        def wrapper(handler):
+            if isinstance(handler,type): #check if the handler is a class or not
+                class_members = inspect.getmembers(handler,lambda x : inspect.isfunction(x) and not (
+                    x.__name__.startswith('__') and x.__name__.endswith('__')) and x.__name__.upper() in SUPPORTED_METHODS
+                )
+                print(class_members)
+
+                for f_name , f_handler in class_members :
+                    self.common_route(path or f"/{handler.__name__}", f_handler , f_name.upper() ,  middlewares)
+
+            else :
+                raise ValueError("Handler must be a class")
+            
+        return wrapper
 
 #making an instance of SlowAPI that will be called using the gunivorn gateway -> in example.py
 #   slowapi = SlowAPI()
