@@ -2,6 +2,7 @@ import inspect
 from typing import Any
 from parse import parse
 from response import Response
+from request import Request
 import types
 
 SUPPORTED_METHODS = {'GET','POST','DELETE','PUT','PATCH'}
@@ -23,6 +24,7 @@ class SlowAPI :
 
     def __call__(self,environ,start_response) -> Any :
         response = Response()
+        request = Request(environ)
         # ****************
         #dictionary is not suitable in this scinario as it does not maintain the order of insertion
         #plus we want to have multiple handlers for same path with different request methods
@@ -33,22 +35,22 @@ class SlowAPI :
         '''
         for middleware in self.middlewares :
             if isinstance(middleware,types.FunctionType):
-                middleware(environ)
+                middleware(request)
             else :
                 raise ValueError(" Middleware must be instance of function ")
 
         for path,handler_dict in self.routes.items() :
-            res = parse(path,environ['PATH_INFO'])
+            res = parse(path,request.path_info)
             
             for request_method , handler in handler_dict.items() :
-                if res and request_method == environ['REQUEST_METHOD']:
+                if res and request.request_method == request_method:
                     route_middlewares = self.middleware_local[path][request_method]
                     for mw in route_middlewares :
                         if isinstance(mw,types.FunctionType):
-                            mw(environ)
+                            mw(request)
                         else :
                             raise ValueError(" Middleware must be instance of function ")
-                    handler(environ,response,**res.named)
+                    handler(request,response,**res.named)
                     return response.as_wsgi(start_response)
                 
                     

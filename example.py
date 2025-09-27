@@ -30,6 +30,7 @@ class User :
         pass
 
     def get(req,res):
+            print(req.queries)
             res.send("Get all users")
         
     def post(req,res):
